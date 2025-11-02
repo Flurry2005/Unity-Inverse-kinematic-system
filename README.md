@@ -29,7 +29,7 @@ The system also uses <a href="https://docs.unity3d.com/Packages/com.unity.animat
 </ol>
 
 <h3 style="margin-top:1.5em;">Feet</h3>
-<ol style="margin-left:1.5em; list-style-type: decimal;">
+<ol style="margin-left:1.5em; list-style-type: decimal; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <li>Add <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">FootIK.cs</code> on the Raycast object (child of the FootRig).</li>
   <li>Under <strong>Constraints</strong>, attach the Multi Parent Constraint to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Foot Ref Constraint</code> and the Two Bone IK Constraint to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Foot IK</code>.</li>
   <li>Under <strong>Transforms</strong>, attach the FootIKTarget.</li>
@@ -41,7 +41,7 @@ The system also uses <a href="https://docs.unity3d.com/Packages/com.unity.animat
 </ol>
 
 <h3 style="margin-top:1.5em;">Player Collider</h3>
-<ol style="margin-left:1.5em; list-style-type: decimal;">
+<ol style="margin-left:1.5em; list-style-type: decimal; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <li>Add <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">PlayerColliderUpdater.cs</code> on the object with the collider component.</li>
   <li>Under <strong>Player Collider</strong>, attach the collider to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Player Collider</code>.</li>
   <li>Under <strong>Transforms</strong>, attach the head bone (<code style="background:#656c7633;border-radius:6px;padding:2px 4px;">HeadTop_end</code>) to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Head Position</code>.</li>
@@ -54,7 +54,7 @@ The system also uses <a href="https://docs.unity3d.com/Packages/com.unity.animat
 </ol>
 
 <h3 style="margin-top:1.5em;">Player Camera</h3>
-<ol style="margin-left:1.5em; list-style-type: decimal;">
+<ol style="margin-left:1.5em; list-style-type: decimal; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <li>Add <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">CameraHeightAdjuster.cs</code> on the object with the Camera component.</li>
   <li>Attach the Camera component to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Player Camera</code>.</li>
   <li>Attach the head bone (<code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Head</code>) to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Head Bone</code> and the empty armature parent to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Armature Parent</code>.</li>
