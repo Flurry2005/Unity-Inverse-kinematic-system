@@ -1,21 +1,21 @@
-<h1 style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;margin-top:0;">Unity Inverse Kinematic System</h1>
+<h1 style="font-size :32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;margin-top:0;">Unity Inverse Kinematic System</h1>
 
 <p style="display: flex; gap:1rem;">
   <img src="https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp&logoColor=white">
   <img src="https://img.shields.io/badge/Unity-100000?style=for-the-badge&logo=unity&logoColor=white">
 </p>
 
-<h2 style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;border-bottom:1px solid #eaecef;padding-bottom:0.3em;">Welcome</h2>
+<h2 style="font-size :24px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;border-bottom:1px solid #eaecef;padding-bottom:0.3em;">Welcome</h2>
 
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Foot and character (Armature) IK for Unity.<br>
 Applicable both on <strong>players</strong> and <strong>Nav Mesh Agents</strong>.</p>
 
-<h2 style="border-bottom:1px solid #eaecef;padding-bottom:0.3em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Usage</h2>
+<h2 style="font-size :24px; border-bottom:1px solid #eaecef;padding-bottom:0.3em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Usage</h2>
 
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">To use the IK system, the <strong>Armature</strong> needs to be parented to an empty object during export from the 3D-modeling software.
 The system also uses <a href="https://docs.unity3d.com/Packages/com.unity.animation.rigging@1.0/manual/index.html">Unity's Animation Rigging Package</a>.</p>
 
-<h3 style="margin-top:1.5em; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Armature</h3>
+<h3 style="font-size :20px;margin-top:1.5em; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Armature</h3>
 <ol style="margin-left:1.5em; list-style-type: decimal; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <li>Add <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">ArmatureIK.cs</code> on the armature object (not empty parent).</li>
   <li>Select Character type, <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Rigidbody</code> and check Using Rigidbody <input type="checkbox" checked style="accent-color:gray">.</li>
@@ -28,7 +28,7 @@ The system also uses <a href="https://docs.unity3d.com/Packages/com.unity.animat
   <li>Select layer masks.</li>
 </ol>
 
-<h3 style="margin-top:1.5em;">Feet</h3>
+<h3 style="font-size :20px;margin-top:1.5em;">Feet</h3>
 <ol style="margin-left:1.5em; list-style-type: decimal; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <li>Add <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">FootIK.cs</code> on the Raycast object (child of the FootRig).</li>
   <li>Under <strong>Constraints</strong>, attach the Multi Parent Constraint to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Foot Ref Constraint</code> and the Two Bone IK Constraint to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Foot IK</code>.</li>
@@ -40,7 +40,7 @@ The system also uses <a href="https://docs.unity3d.com/Packages/com.unity.animat
   <li>Attach script references.</li>
 </ol>
 
-<h3 style="margin-top:1.5em;">Player Collider</h3>
+<h3 style="font-size :20px; margin-top:1.5em;">Player Collider</h3>
 <ol style="margin-left:1.5em; list-style-type: decimal; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <li>Add <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">PlayerColliderUpdater.cs</code> on the object with the collider component.</li>
   <li>Under <strong>Player Collider</strong>, attach the collider to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Player Collider</code>.</li>
@@ -53,7 +53,7 @@ The system also uses <a href="https://docs.unity3d.com/Packages/com.unity.animat
   <li>Attach script references.</li>
 </ol>
 
-<h3 style="margin-top:1.5em;">Player Camera</h3>
+<h3 style="font-size :20px; margin-top:1.5em;">Player Camera</h3>
 <ol style="margin-left:1.5em; list-style-type: decimal; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <li>Add <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">CameraHeightAdjuster.cs</code> on the object with the Camera component.</li>
   <li>Attach the Camera component to <code style="background:#656c7633;border-radius:6px;padding:2px 4px;">Player Camera</code>.</li>
