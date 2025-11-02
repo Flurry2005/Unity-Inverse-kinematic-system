@@ -1,6 +1,6 @@
 <h1 style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;margin-top:0;">Unity Inverse Kinematic System</h1>
 
-<p style="flex">
+<p style="display: flex; gap:1rem;">
   <img src="https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp&logoColor=white">
   <img src="https://img.shields.io/badge/Unity-100000?style=for-the-badge&logo=unity&logoColor=white">
 </p>
