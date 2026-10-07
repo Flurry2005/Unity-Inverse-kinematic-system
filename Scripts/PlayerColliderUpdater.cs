@@ -42,7 +42,7 @@ public class PlayerColliderUpdater : MonoBehaviour
         var rayOrigin = HeadPosition.position;
         rayOrigin.y += rayYOffset;
 
-            if (Physics.Raycast(rayOrigin, Vector3.down, out var hit, rayDistance, GroundLayer & ~(1 << LayersToIgnore)) && playerMovmentScript.grounded)
+            if (Physics.Raycast(rayOrigin, Vector3.down, out var hit, rayDistance, GroundLayer & ~LayersToIgnore.value) && playerMovmentScript.grounded)
             {
                 float newColliderHeight = HeadPosition.position.y - hit.point.y + additionalHeadHeight;
 
@@ -65,7 +65,7 @@ public class PlayerColliderUpdater : MonoBehaviour
         var rayOrigin = HeadPosition.position;
         rayOrigin.y += rayYOffset;
 
-        if (Physics.Raycast(rayOrigin, Vector3.down, out var hit, rayDistance, GroundLayer & ~(1 << LayersToIgnore)) && (this.grounded))
+        if (Physics.Raycast(rayOrigin, Vector3.down, out var hit, rayDistance, GroundLayer & ~LayersToIgnore.value) && (this.grounded))
         {
             float newColliderHeight = rayOrigin.y - hit.point.y;
             newColliderHeight += additionalHeadHeight;

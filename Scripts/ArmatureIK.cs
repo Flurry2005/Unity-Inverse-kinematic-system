@@ -65,7 +65,7 @@ public class ArmatureIK : MonoBehaviour
         //Zero offset and recalc later
         currentYoffset = 0;
 
-        if (Physics.Raycast(rightFoot.position + new Vector3(0, rayYOffset, 0), Vector3.down, out var hitRight, offsetRayDistance, (hitLayers) & ~(1 << ignoreLayers))
+        if (Physics.Raycast(rightFoot.position + new Vector3(0, rayYOffset, 0), Vector3.down, out var hitRight, offsetRayDistance, hitLayers & ~ignoreLayers.value)
             && UpdateHeight)
         {
             //Ensure armature is not offset on a Roof 
@@ -83,7 +83,7 @@ public class ArmatureIK : MonoBehaviour
         }
 
 
-        if (Physics.Raycast(leftFoot.position + new Vector3(0, rayYOffset, 0), Vector3.down, out var hitLeft, offsetRayDistance, (hitLayers) & ~(1 << ignoreLayers))
+        if (Physics.Raycast(leftFoot.position + new Vector3(0, rayYOffset, 0), Vector3.down, out var hitLeft, offsetRayDistance, hitLayers & ~ignoreLayers.value)
             && UpdateHeight)
         {
             //Ensure armature is not offset on a Roof 
@@ -129,7 +129,7 @@ public class ArmatureIK : MonoBehaviour
         //Zero offset and recalc later
         currentYoffset = 0;
 
-        if (Physics.Raycast(rightFoot.position + new Vector3(0, rayYOffset, 0), Vector3.down, out var hitRight, offsetRayDistance, (hitLayers) & ~(1 << ignoreLayers))
+        if (Physics.Raycast(rightFoot.position + new Vector3(0, rayYOffset, 0), Vector3.down, out var hitRight, offsetRayDistance, hitLayers & ~ignoreLayers.value)
             && UpdateHeight)
         {
             //Ensure armature is not offset on a Roof
@@ -147,7 +147,7 @@ public class ArmatureIK : MonoBehaviour
         }
 
 
-        if (Physics.Raycast(leftFoot.position + new Vector3(0, rayYOffset, 0), Vector3.down, out var hitLeft, offsetRayDistance, (hitLayers) & ~(1 << ignoreLayers))
+        if (Physics.Raycast(leftFoot.position + new Vector3(0, rayYOffset, 0), Vector3.down, out var hitLeft, offsetRayDistance, hitLayers & ~ignoreLayers.value)
             && UpdateHeight)
         {
             //Ensure armature is not offset on a Roof
