@@ -21,6 +21,15 @@ public class ArmatureIKEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        if (GUILayout.Button("Auto Setup Foot IK", GUILayout.Height(26)))
+        {
+            // Deferred: the setup may save and reload the prefab this inspector is drawing.
+            GameObject go = ((ArmatureIK)target).gameObject;
+            EditorApplication.delayCall += () => FootIKAutoSetup.Run(go);
+            GUIUtility.ExitGUI();
+        }
+        EditorGUILayout.Space();
+
         serializedObject.Update();
 
         EditorGUILayout.PropertyField(selectedOptionProp);

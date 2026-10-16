@@ -34,6 +34,10 @@ public class FootIKScript : MonoBehaviour
 
     private Vector3 rayOrigin;
 
+    // Whether IKTarget followed this foot last frame. A target left behind while the ray missed
+    // can be metres away and turned half around; easing back from there spun the hoof.
+    private bool targetFollowing;
+
     private void LateUpdate()
     {
         footIK.weight = 0;
@@ -47,12 +51,18 @@ public class FootIKScript : MonoBehaviour
         // Hoisted out of the null check below: this used to be called as an argument to
         // UpdateCollider, so leaving playerColliderUpdater unassigned silently stopped the
         // armature adjusting at all.
+        // Every foot calls this; only the first foot each frame does the per-body work, so a
+        // four-legged character does not ease its collider and camera four times a frame.
+        bool firstFoot = ArmatureIKScript.FirstCallThisFrame;
         bool armatureAdjusted = ArmatureIKScript.UpdateArmature();
 
-        if (playerColliderUpdater != null)
-            playerColliderUpdater.UpdateCollider(armatureAdjusted, ArmatureIKScript.UsingNavMeshAgent, ArmatureIKScript.UsingRigidbody);
+        if (firstFoot)
+        {
+            if (playerColliderUpdater != null)
+                playerColliderUpdater.UpdateCollider(armatureAdjusted, ArmatureIKScript.UsingNavMeshAgent, ArmatureIKScript.UsingRigidbody);
 
-        if (CameraHeightAdjusterScript != null) CameraHeightAdjusterScript.AdjustHeight();
+            if (CameraHeightAdjusterScript != null) CameraHeightAdjusterScript.AdjustHeight();
+        }
 
         transform.position = footRefConstraint.transform.position;
 
@@ -70,9 +80,19 @@ public class FootIKScript : MonoBehaviour
         // layer 0 instead of the player.
         int probeMask = mask & ~playerLayer.value;
 
-        if (Physics.Raycast(rayOrigin, Vector3.down, out var hit, probeLength, probeMask))
+        if (ArmatureIKScript.GroundRay(rayOrigin, probeLength, probeMask, out var hit))
         {
-            if (hit.normal.y < 0) return;
+            if (hit.normal.y < 0)
+            {
+                targetFollowing = false;
+                return;
+            }
+
+            if (!targetFollowing)
+            {
+                IKTarget.SetPositionAndRotation(footRefConstraint.transform.position, footRefConstraint.transform.rotation);
+                targetFollowing = true;
+            }
 
             // Where the foot rests ON the ground. plantedYOffset is deliberately not part of
             // this: it is cosmetic clearance, so it is added only to the position handed to
@@ -124,7 +144,7 @@ public class FootIKScript : MonoBehaviour
             }
 
             IKTarget.position = Vector3.Lerp(IKTarget.position, target, Time.deltaTime * speed);
-            footIK.weight = 1;
+            footIK.weight = ArmatureIKScript.Weight;
 
             // Roll the sole onto the surface in every case except one: the body never settled
             // onto the terrain AND this foot is out of reach of the ground. Then it is not on
@@ -139,6 +159,8 @@ public class FootIKScript : MonoBehaviour
                 armatureAdjusted || withinReach ? groundAligned : footRefConstraint.transform.rotation,
                 Time.deltaTime * IKFootRotationSpeed);
         }
+        else
+            targetFollowing = false;
 
         Debug.DrawRay(rayOrigin, Vector3.down * probeLength, Color.red);
     }
