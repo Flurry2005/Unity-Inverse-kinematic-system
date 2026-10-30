@@ -29,6 +29,10 @@ public class ArmatureIK : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private float rayYOffset = 1;
     [SerializeField] private float rayDistance = 0.1f;
+    [Tooltip("Foot rays start at least this far above the foot (the ray is lengthened to match). A ray starting " +
+             "inside a floor's collider never hits it: a foot pushed into a foundation then found no ground, the " +
+             "armature stopped settling and the player collider kept a stale height.")]
+    [SerializeField] private float minRayStartAbove = 0.5f;
     [SerializeField] private float AdjustSpeed;
     public bool UpdateHeight = true;
     [SerializeField] private bool manualUpdateToggle;
@@ -55,6 +59,8 @@ public class ArmatureIK : MonoBehaviour
     [SerializeField] private float previousArmatureParentZRotation = 0;
 
     private Quaternion restLocalRotation;
+    private Vector3 restLocalPosition;
+    private bool started;
     private int lastUpdateFrame = -1;
     private bool lastUpdateResult;
     private Collider[] ownColliders = System.Array.Empty<Collider>();
@@ -83,6 +89,23 @@ public class ArmatureIK : MonoBehaviour
     {
         previousArmatureParentYValue = armatureParent.transform.position.y;
         restLocalRotation = armatureParent.localRotation;
+        restLocalPosition = armatureParent.localPosition;
+        started = true;
+    }
+
+    /// <summary>
+    /// Puts the armature parent back in its rest pose, for a character whose foot IK is switched
+    /// off (far away, off screen): it would otherwise keep the height and tilt it was last
+    /// settled to, and ease back from that stale height when the IK comes on again.
+    /// </summary>
+    public void ResetPose()
+    {
+        if (!started)
+            return;
+        armatureParent.localPosition = restLocalPosition;
+        armatureParent.localRotation = restLocalRotation;
+        previousArmatureParentYValue = armatureParent.position.y;
+        currentYoffset = 0f;
     }
 
     /// <summary>
@@ -173,7 +196,8 @@ public class ArmatureIK : MonoBehaviour
     private bool TryGround(Transform foot, out Vector3 point)
     {
         point = default;
-        if (!GroundRay(foot.position + new Vector3(0, rayYOffset, 0), rayDistance, hitLayers & ~ignoreLayers.value, out var hit))
+        float lift = Mathf.Max(0f, minRayStartAbove - rayYOffset);
+        if (!GroundRay(foot.position + new Vector3(0, rayYOffset + lift, 0), rayDistance + lift, hitLayers & ~ignoreLayers.value, out var hit))
             return false;
         //Ensure armature is not offset on a Roof
         if (hit.normal.y < 0)

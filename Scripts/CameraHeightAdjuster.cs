@@ -13,77 +13,81 @@ public class CameraHeightAdjuster : MonoBehaviour
     [SerializeField] private float adjustSpeed;
     [SerializeField] private Vector3 positionOffset;
 
-    [Header("Collision")]
+    [Header("Wall Clipping")]
     [Tooltip(
-        "What the camera may not end up inside. The player's own colliders are skipped "
-            + "automatically, so this can stay as Everything."
+        "The body's own collider. When the head reaches into a wall, the visible body (Armature "
+            + "Parent) moves back until the camera clears it, found by a short sideways probe from "
+            + "this capsule's centre line, at the camera's height, to the head. Found "
+            + "automatically when left empty."
     )]
-    [SerializeField] private LayerMask collisionMask = ~0;
+    [SerializeField] private CapsuleCollider bodyCollider;
 
-    [Tooltip(
-        "Radius of the probe. It needs to cover the near plane's corners, or the corners clip "
-            + "into a surface the centre of the camera has cleared. At a 90 degree field of "
-            + "view and a 0.01 near plane the corner is about 0.015 out, so 0.05 is ample."
-    )]
-    [SerializeField] private float collisionRadius = 0.05f;
-
-    [Tooltip("Gap kept between the camera and whatever it stopped against.")]
-    [SerializeField] private float collisionSkin = 0.02f;
-
-    [Tooltip("How quickly the camera eases back out, in units per second, once a surface stops blocking it. It always pulls IN instantly.")]
-    [SerializeField] private float collisionReturnSpeed = 4f;
+    [Tooltip("What the camera may not end up inside. The player's own colliders are skipped automatically.")]
+    [SerializeField] private LayerMask clipMask = ~0;
 
     [Tooltip(
-        "The body's own collider. The probe starts at its centre, because that point cannot be "
-            + "inside a wall -- it is the thing that stops the player entering one. The head "
-            + "bone can be: lean against a rock and the animation pushes the head through it, "
-            + "and a probe starting in there reports nothing, since a sphere cast ignores what "
-            + "it already overlaps. Found automatically when left empty."
+        "Radius of the probe. It must cover the near plane's corners: at a 90 degree field of "
+            + "view and a 0.01 near plane they are about 0.02 out."
     )]
-    [SerializeField] private Collider bodyCollider;
+    [SerializeField] private float clipRadius = 0.05f;
+
+    [Tooltip("Gap kept between the camera and the wall it stopped at.")]
+    [SerializeField] private float clipSkin = 0.02f;
+
+    [Tooltip("How fast the camera follows the head back out once the wall no longer blocks it, in units per second. It always stops at a wall at once.")]
+    [SerializeField] private float clipReturnSpeed = 2f;
 
     private readonly RaycastHit[] hitBuffer = new RaycastHit[8];
 
-    // How far out the camera is currently permitted to sit. Carried between frames so that
-    // easing back out is gradual while pulling in is immediate.
+    // How far from the centre line the camera may sit, carried between frames so a probe
+    // flickering along an edge eases back out instead of snapping.
     private float allowedDistance = float.PositiveInfinity;
+
+    // ArmatureParent's own local x/z. The body shift is applied on top of it every frame, from
+    // scratch, so it can never accumulate.
+    private Vector2 armatureRestLocalXZ;
 
     private void Start()
     {
         playerCameraStartLocalValue = playerCamera.transform.localPosition;
         previousPlayerCameraLocalValue = playerCameraStartLocalValue;
+        if (ArmatureParent != null)
+            armatureRestLocalXZ = new Vector2(ArmatureParent.localPosition.x, ArmatureParent.localPosition.z);
     }
     public void AdjustHeight()
     {
+        // Undo last frame's body shift first, so the head below is where the animation puts it.
+        // Measuring from the shifted head would make the shift feed back into itself.
+        SetBodyShift(Vector3.zero);
+
         // Step 1: Compute the offset relative to the head bone's rotation
         Vector3 rotatedOffset = headBone.rotation * positionOffset;
 
         // Step 2: Compute the target world position
         Vector3 targetWorldPos = headBone.position + rotatedOffset;
 
-        // Step 2b: How far along the line from the body to the camera it may actually sit.
-        //
-        // Anchored at the body collider's centre, not the head: that point is never inside
-        // scenery, so there is always somewhere safe to retreat to. The direction also comes
-        // from it rather than from where the camera currently is -- casting along "current
-        // position minus anchor" made the probe depend on the camera, the clamp then moved the
-        // camera, which changed the direction and the result, and it oscillated against slopes.
-        Vector3 anchor = ProbeAnchor();
-        Vector3 toTarget = targetWorldPos - anchor;
-        float desiredDistance = toTarget.magnitude;
-        if (desiredDistance > 0.0001f)
+        // Step 2b: a wall the head reaches into moves the whole visible body back, not just the
+        // camera. Holding only the camera back left it above the torso, so looking down at a
+        // wall looked into the chest; shifted together, the head, camera and chest keep their
+        // usual layout. Only the armature moves: the player's position and collider stay put.
+        bool hasAnchor = TryClipAnchor(targetWorldPos, out Vector3 anchor);
+        if (hasAnchor)
         {
-            Vector3 direction = toTarget / desiredDistance;
-            float clearDistance = ProbeClearDistance(anchor, direction, desiredDistance);
+            Vector3 toTarget = targetWorldPos - anchor;
+            float desiredDistance = toTarget.magnitude;
+            if (desiredDistance > 0.0001f)
+            {
+                Vector3 direction = toTarget / desiredDistance;
+                float clear = ProbeClearDistance(anchor, direction, desiredDistance);
+                allowedDistance = clear < allowedDistance
+                    ? clear
+                    : Mathf.MoveTowards(allowedDistance, clear, clipReturnSpeed * Time.deltaTime);
 
-            // Pull in at once, ease back out. Snapping outwards the instant a surface clears is
-            // the other half of the twitch: the probe flickers between hit and miss along an
-            // edge, and without this the camera flickers with it.
-            allowedDistance = clearDistance < allowedDistance
-                ? clearDistance
-                : Mathf.MoveTowards(allowedDistance, clearDistance, collisionReturnSpeed * Time.deltaTime);
-
-            targetWorldPos = anchor + direction * allowedDistance;
+                Vector3 shift = direction * (Mathf.Min(allowedDistance, desiredDistance) - desiredDistance);
+                shift.y = 0f;
+                SetBodyShift(shift);
+                targetWorldPos += shift;
+            }
         }
 
         // Step 3: Convert to camera parent local space
@@ -96,48 +100,78 @@ public class CameraHeightAdjuster : MonoBehaviour
             Time.deltaTime * adjustSpeed
         );
 
-        // Step 5: the camera renders from where it IS, and the lerp leaves it trailing its
-        // target, so hold it inside the same limit. Only the distance is capped here -- the
-        // limit itself was decided above, independently of this position, so this cannot feed
-        // back into the probe.
+        // Step 5: the lerp leaves the camera trailing its target, so the wall limit is also
+        // applied to where it actually renders from. Only the position is held back, never the
+        // rotation, so looking down against a wall still works.
         Vector3 easedWorldPos = playerCamera.transform.parent.TransformPoint(easedLocalPos);
-        Vector3 fromAnchor = easedWorldPos - anchor;
-        float easedDistance = fromAnchor.magnitude;
-        if (easedDistance > allowedDistance && easedDistance > 0.0001f)
-            easedWorldPos = anchor + fromAnchor * (allowedDistance / easedDistance);
+        if (hasAnchor)
+        {
+            Vector3 fromAnchor = easedWorldPos - anchor;
+            float easedDistance = fromAnchor.magnitude;
+            if (easedDistance > allowedDistance && easedDistance > 0.0001f)
+                easedWorldPos = anchor + fromAnchor * (allowedDistance / easedDistance);
+        }
 
         playerCamera.transform.localPosition =
             playerCamera.transform.parent.InverseTransformPoint(easedWorldPos);
     }
 
     /// <summary>
-    /// Where the probe starts: the centre of the body's collider, which is always outside
-    /// scenery. Falls back to the head bone when there is no collider to use.
+    /// Moves the armature sideways by <paramref name="worldShift"/> from its rest x/z, leaving
+    /// its height to ArmatureIK, which settles it onto the ground before this runs.
     /// </summary>
-    private Vector3 ProbeAnchor()
+    private void SetBodyShift(Vector3 worldShift)
+    {
+        if (ArmatureParent == null)
+            return;
+        Transform parent = ArmatureParent.parent;
+        Vector3 localShift = parent != null ? parent.InverseTransformVector(worldShift) : worldShift;
+        Vector3 local = ArmatureParent.localPosition;
+        local.x = armatureRestLocalXZ.x + localShift.x;
+        local.z = armatureRestLocalXZ.y + localShift.z;
+        ArmatureParent.localPosition = local;
+    }
+
+    /// <summary>
+    /// The probe's start: on the capsule's centre line at the target's height, kept within the
+    /// capsule. That point is inside the body, which physics keeps out of scenery, and the probe
+    /// from it to the head is short and sideways, so it never passes through a floor. It does not
+    /// depend on where the camera is, so the clamp cannot feed back into it.
+    /// </summary>
+    private bool TryClipAnchor(Vector3 target, out Vector3 anchor)
     {
         if (bodyCollider == null)
             bodyCollider = playerCamera.transform.root.GetComponentInChildren<CapsuleCollider>();
-        return bodyCollider != null ? bodyCollider.bounds.center : headBone.position;
+        if (bodyCollider == null)
+        {
+            anchor = default;
+            return false;
+        }
+
+        // Inset by the probe's radius only: the centre line is inside the capsule right up to its
+        // top, and the capsule's top sits just above the head. Insetting by the capsule radius put
+        // the anchor ~0.3 m under the camera, so a blocked camera slid down toward the chest.
+        Bounds bounds = bodyCollider.bounds;
+        float inset = Mathf.Min(clipRadius + clipSkin, bounds.extents.y);
+        anchor = bounds.center;
+        anchor.y = Mathf.Clamp(target.y, bounds.min.y + inset, bounds.max.y - inset);
+        return true;
     }
 
     /// <summary>
     /// How far from <paramref name="anchor"/> along <paramref name="direction"/> the camera can
-    /// sit without ending up inside something, up to <paramref name="maxDistance"/>.
-    ///
-    /// Hits on the player's own body are ignored by hierarchy rather than by layer, so no layer
-    /// setup is needed: the character's capsule surrounds the head and would otherwise stop the
-    /// camera dead at the anchor.
+    /// sit without ending up inside something, up to <paramref name="maxDistance"/>. The
+    /// player's own colliders are skipped by hierarchy, so no layer setup is needed.
     /// </summary>
     private float ProbeClearDistance(Vector3 anchor, Vector3 direction, float maxDistance)
     {
         int count = Physics.SphereCastNonAlloc(
             anchor,
-            collisionRadius,
+            clipRadius,
             direction,
             hitBuffer,
             maxDistance,
-            collisionMask,
+            clipMask,
             QueryTriggerInteraction.Ignore
         );
 
@@ -148,7 +182,7 @@ public class CameraHeightAdjuster : MonoBehaviour
             Collider collider = hitBuffer[i].collider;
             if (collider == null || collider.transform.IsChildOf(self))
                 continue;
-            float clear = hitBuffer[i].distance - collisionSkin;
+            float clear = hitBuffer[i].distance - clipSkin;
             if (clear < nearest)
                 nearest = clear;
         }
